@@ -19,13 +19,14 @@ public class UseMangoBuilderTest {
     final String testName = "TestFile";
     final String testStatus = "TestStatus";
     final String assignedTo = "TestAssignee";
+    final String environmentId = "Environment";
 
     @Ignore
     public void testConfigRoundtrip() throws Exception {
         FreeStyleProject project = jenkins.createFreeStyleProject();
-        project.getBuildersList().add(new UseMangoBuilder(useNodeLabel, nodeLabel, projectId, testName, tags, testStatus, assignedTo));
+        project.getBuildersList().add(new UseMangoBuilder(useNodeLabel, nodeLabel, projectId, testName, tags, testStatus, assignedTo, environmentId));
         project = jenkins.configRoundtrip(project);
-        jenkins.assertEqualDataBoundBeans(new UseMangoBuilder(useNodeLabel, nodeLabel, projectId, testName, tags, testStatus, assignedTo),
+        jenkins.assertEqualDataBoundBeans(new UseMangoBuilder(useNodeLabel, nodeLabel, projectId, testName, tags, testStatus, assignedTo, environmentId),
         		project.getBuildersList().get(0));
     }
 

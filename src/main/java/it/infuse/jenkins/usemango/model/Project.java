@@ -5,8 +5,25 @@ import com.google.api.client.util.Key;
 
 public class Project extends GenericJson {
 
+	@Key("Id")
+	private String id;
+
 	@Key("Name")
 	private String name;
+	
+	/**
+	 * @return the id
+	 */
+	public String getId() {
+		return id;
+	}
+
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(String id) {
+		this.id = id;
+	}
 
 	/**
 	 * @return the name

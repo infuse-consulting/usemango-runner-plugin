@@ -28,16 +28,18 @@ public class UseMangoTestTask extends AbstractQueueTask implements AccessControl
 	private final BuildListener listener;
 	private final ExecutableTest test;
 	private final String projectId;
+	private final String environmentId;
 	private final StandardUsernamePasswordCredentials credentials;
 
     public UseMangoTestTask(String nodeLabel, AbstractBuild<?,?> build, BuildListener listener,
-			ExecutableTest test, String projectId,
+			ExecutableTest test, String projectId, String environmentId,
 			StandardUsernamePasswordCredentials credentials) {
 		this.nodeLabel = nodeLabel;
     	this.build = build;
         this.listener = listener;
         this.test = test;
         this.projectId = projectId;
+		this.environmentId = environmentId;
         this.credentials = credentials;
     }
 
@@ -121,6 +123,6 @@ public class UseMangoTestTask extends AbstractQueueTask implements AccessControl
 	
     public Executable createExecutable() throws IOException {
     	return new UseMangoTestExecutor(this, build.getWorkspace(), listener, test,
-										projectId, credentials);
+										projectId, environmentId, credentials);
     }
 }

@@ -3,7 +3,7 @@ package it.infuse.jenkins.usemango.model;
 import com.google.api.client.json.GenericJson;
 import com.google.api.client.util.Key;
 
-public class TestIndexInfo extends GenericJson {
+public class ResponseInfo extends GenericJson {
 
 	@Key("Next")
 	private String next;
@@ -65,7 +65,7 @@ public class TestIndexInfo extends GenericJson {
 
 	@Override
 	public boolean equals(Object o) {
-		if (!(o instanceof TestIndexInfo)) {
+		if (!(o instanceof ResponseInfo)) {
 			return false;
 		}
 		return super.equals(o);

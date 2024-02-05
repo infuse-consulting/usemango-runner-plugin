@@ -34,6 +34,7 @@ mvn clean package
     1. Add the build step `Run useMango tests` 
     2. Enter your `Project ID` (i.e. the name of your project in your useMango account)
     3. Add further filtering where needed
+       1. You can select the environment from the dropdown (note: The project's default environment is preselected)
     4. Click the `Validate` button to validate your settings (note: only the tests shown will be executed during the build)
     5. Optional:  Add the post-build action `Publish JUnit test result report` and enter `results/*.xml` as the value for `Test report XMLs`.
 

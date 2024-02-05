@@ -15,6 +15,7 @@ import hudson.util.ArgumentListBuilder;
 import it.infuse.jenkins.usemango.model.ExecutableTest;
 import it.infuse.jenkins.usemango.model.Scenario;
 import it.infuse.jenkins.usemango.util.ProjectUtils;
+import it.infuse.jenkins.usemango.util.StringUtils;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -30,16 +31,18 @@ public class UseMangoTestExecutor implements Executable {
 	private final BuildListener listener;
 	private final ExecutableTest test;
 	private final String projectId;
+	private final String environmentId;
 	private final StandardUsernamePasswordCredentials credentials;
 
     public UseMangoTestExecutor(Task task, FilePath workspace, BuildListener listener,
-			ExecutableTest test, String projectId,
+			ExecutableTest test, String projectId, String environmentId,
             StandardUsernamePasswordCredentials credentials){
     	this.task = task;
     	this.workspace = workspace;
         this.listener = listener;
         this.test = test;
         this.projectId = projectId;
+		this.environmentId = environmentId;
         this.credentials = credentials;
     }
 
@@ -162,6 +165,9 @@ public class UseMangoTestExecutor implements Executable {
     	args.addTokenized(motorPath);
 		args.addTokenized(" -p \""+projectId+"\"");
 		args.addTokenized(" -i \""+test.getId()+"\"");
+		if (!StringUtils.isBlank(environmentId) || environmentId != null) {
+			args.addTokenized(" -v \""+ environmentId +"\"");
+		}
 
 		Scenario scenario = test.getScenario();
 		if (scenario != null) {

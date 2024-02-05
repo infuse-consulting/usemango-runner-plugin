@@ -25,6 +25,9 @@
     <f:entry field="assignedTo" title="Assigned to">
         <f:select/>
     </f:entry>
+    <f:entry field="environmentId" title="Environment">
+        <f:select checkMethod="post" />
+    </f:entry>
 	<f:validateButton title="Validate" progress="Validating..." 
-		method="validateSettings" with="projectId,tags,testName,testStatus,assignedTo"/>
+		method="validateSettings" with="projectId,tags,testName,testStatus,assignedTo,environmentId"/>
 </j:jelly>
