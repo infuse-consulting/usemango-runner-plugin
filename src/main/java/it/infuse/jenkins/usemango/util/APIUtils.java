@@ -21,9 +21,9 @@ public class APIUtils {
 	final static String ENDPOINT_PROJECTS 	= "/projects";
     final static String ENDPOINT_PROJECT 	= ENDPOINT_PROJECTS + "/%s";
     final static String ENDPOINT_TESTINDEX = ENDPOINT_PROJECT + "/testindex";
-	final static String ENDPOINT_USERS = "/users";
-	final static String ENDPOINT_ENVIRONMENTS = "/projects/%s/environments";
-	final static String ENDPOINT_DEFAULT_ENVIRONMENT = "/projects/%s/environments/default";
+    final static String ENDPOINT_USERS = "/users";
+    final static String ENDPOINT_ENVIRONMENTS = "/projects/%s/environments";
+    final static String ENDPOINT_DEFAULT_ENVIRONMENT = "/projects/%s/environments/default";
     final static String ENDPOINT_PROJECT_TAGS = ENDPOINT_PROJECT + "/testtags";
     final static String ENDPOINT_TEST_SCENARIOS = ENDPOINT_PROJECT + "/tests/%s/scenarios";
 
@@ -43,12 +43,12 @@ public class APIUtils {
 		return testAppURL;
 	}
 
-	public static Response<TestIndexItem> getTestIndex(TestIndexParams params, String idToken) throws IOException {
+	public static TestIndexResponse getTestIndex(TestIndexParams params, String idToken) throws IOException {
 		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
 				(HttpRequest request) -> {request.setParser(new JsonObjectParser(JSON_FACTORY));
         });
 		Log.fine("Loading test index with filters: " + new Gson().toJson(params));
-		Response<TestIndexItem> response = null;
+		TestIndexResponse response = null;
 		while(true) { // handle pagination
 		    GenericUrl url = new GenericUrl(getTestServiceUrl());
 			url.setRawPath(API_VERSION + String.format(ENDPOINT_TESTINDEX, params.getProjectId()));
@@ -60,7 +60,7 @@ public class APIUtils {
 			HttpRequest request = requestFactory.buildGetRequest(url);
 			request.setHeaders(getHeadersForServer(idToken));
 			if(isAnotherPage(response)) {
-				Response<TestIndexItem> tmpResponse = request.execute().parseAs(TestIndexResponse.class);
+				TestIndexResponse tmpResponse = request.execute().parseAs(TestIndexResponse.class);
 				response.getItems().addAll(tmpResponse.getItems());
 				response.getInfo().setHasNext(tmpResponse.getInfo().isHasNext());
 				response.getInfo().setNext(tmpResponse.getInfo().getNext());
@@ -113,12 +113,12 @@ public class APIUtils {
 
 	@SuppressWarnings("unchecked")
 
-	public static Response<EnvironmentItem> getEnvironments(String idToken, String project) throws IOException {
+	public static EnvironmentResponse getEnvironments(String idToken, String project) throws IOException {
 		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
 				(HttpRequest request) -> {request.setParser(new JsonObjectParser(JSON_FACTORY));
 				});
 
-		Response<EnvironmentItem> response = null;
+		EnvironmentResponse response = null;
 		while(true) { // handle pagination
 			GenericUrl url = new GenericUrl(getTestServiceUrl());
 
@@ -127,7 +127,7 @@ public class APIUtils {
 			HttpRequest request = requestFactory.buildGetRequest(url);
 			request.setHeaders(getHeadersForServer(idToken));
 			if(isAnotherPage(response)) {
-				Response<EnvironmentItem> tmpResponse = request.execute().parseAs(EnvironmentResponse.class);
+				EnvironmentResponse tmpResponse = request.execute().parseAs(EnvironmentResponse.class);
 				response.getItems().addAll(tmpResponse.getItems());
 				response.getInfo().setHasNext(tmpResponse.getInfo().isHasNext());
 				response.getInfo().setNext(tmpResponse.getInfo().getNext());
@@ -166,8 +166,8 @@ public class APIUtils {
 		return (ArrayList<Scenario>)response.parseAs(new TypeToken<ArrayList<Scenario>>(){}.getType());
 	}
 	
-	private static boolean isAnotherPage(Response response) {
-		return response != null && response.getInfo() != null && response.getInfo().isHasNext();
+	private static boolean isAnotherPage(PagedResponse pagedResponse) {
+		return pagedResponse != null && pagedResponse.getInfo() != null && pagedResponse.getInfo().isHasNext();
 	}
 
 	private static HttpHeaders getHeadersForServer(String idToken){

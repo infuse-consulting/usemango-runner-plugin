@@ -5,7 +5,7 @@ import com.google.api.client.util.Key;
 
 import java.util.List;
 
-public class Response<T> extends GenericJson {
+public class PagedResponse<T> extends GenericJson {
     @Key("Items")
     private List<T> items;
     @Key("FullCount")
@@ -45,7 +45,7 @@ public class Response<T> extends GenericJson {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Response)) {
+        if (!(o instanceof PagedResponse)) {
             return false;
         }
         return super.equals(o);

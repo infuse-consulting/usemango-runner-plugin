@@ -113,7 +113,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 			params.setTestStatus(this.testStatus);
 			listener.getLogger().println("TestIndex API parameters:\n"+gson.toJson(params));
 
-			Response<TestIndexItem> testIndexes = null;
+			TestIndexResponse testIndexes = null;
 			testIndexes = getTestIndexes(params);
 
 			if(testIndexes != null && testIndexes.getItems() != null && testIndexes.getItems().size() > 0) {
@@ -241,7 +241,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		public ListBoxModel doFillEnvironmentIdItems(@QueryParameter String projectId) {
 			ListBoxModel items = new ListBoxModel();
 			try {
-				Response<EnvironmentItem> environments = getEnvironments(projectId);
+				EnvironmentResponse environments = getEnvironments(projectId);
 				if(environments != null && environments.getItems() != null && !environments.getItems().isEmpty()) {
 					List<EnvironmentItem> environmentItems = environments.getItems();
 					environmentItems.forEach(environmentItem -> {
@@ -271,9 +271,9 @@ public class UseMangoBuilder extends Builder implements BuildStep {
     	}
 
         @POST
-        public FormValidation doCheckNodeLabel(@QueryParameter String nodeLabel) 
+        public FormValidation doCheckNodeLabel(@QueryParameter String nodeLabel)
         		throws IOException, ServletException {
-        	
+
         	if(StringUtils.isNotBlank(nodeLabel)) {
         		Label label = Label.get(nodeLabel);
         		if(label != null && label.getNodes() != null && label.getNodes().size() > 0) {
@@ -314,28 +314,28 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 			}
         }
 
-		@POST
-		public FormValidation doCheckEnvironmentId(@QueryParameter String projectId)
-				throws IOException, UseMangoException {
-			try {
-				if(!projectId.isEmpty()) {
-					String defaultEnvironmentName = getDefaultEnvironment(projectId).getName();
-					return FormValidation.okWithMarkup("Default Environment: " + defaultEnvironmentName);
-				}
-				return FormValidation.ok();
-			}
-			catch (HttpResponseException e) {
-				return FormValidation.warning("Some error occurred");
-			}
-		}
+        @POST
+        public FormValidation doCheckEnvironmentId(@QueryParameter String projectId)
+                throws IOException, UseMangoException {
+            try {
+        		if(!projectId.isEmpty()) {
+        			String defaultEnvironmentName = getDefaultEnvironment(projectId).getName();
+        			return FormValidation.okWithMarkup("Default Environment: " + defaultEnvironmentName);
+        		}
+        		return FormValidation.ok();
+        	}
+        	catch (HttpResponseException e) {
+        		return FormValidation.warning("Error fetching project's default environment:" + e.getMessage());
+        	}
+        }
 
     	public FormValidation doValidateSettings(
     			@QueryParameter("projectId") final String projectId,
     			@QueryParameter("tags") final String tags,
     			@QueryParameter("testName") final String testName,
-    	        @QueryParameter("testStatus") final String testStatus,
-    	        @QueryParameter("assignedTo") final String assignedTo,
-				@QueryParameter("environmentId") final String environmentId) throws IOException {
+    			@QueryParameter("testStatus") final String testStatus,
+    			@QueryParameter("assignedTo") final String assignedTo,
+    			@QueryParameter("environmentId") final String environmentId) throws IOException {
 
     		if(!ProjectUtils.hasCorrectPermissions(User.current())) {
     			return FormValidation.error("Jenkins user '"+User.current()+"' does not have permissions to configure and build this Job - please contact your system administrator, or update the users' security settings.");
@@ -360,7 +360,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 	    			params.setProjectId(projectId);
 	    			params.setTestName(testName);
 	    			params.setTestStatus(testStatus);
-					Response<TestIndexItem> indexes = getTestIndexes(params);
+	    			TestIndexResponse indexes = getTestIndexes(params);
 
 					String umURL = Util.escape(APIUtils.getTestServiceUrl());
 					String userName = Util.escape(credentials.getUsername());
@@ -484,7 +484,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		}
 	}
 
-	private static Response<TestIndexItem> getTestIndexes(TestIndexParams params) throws IOException, UseMangoException {
+	private static TestIndexResponse getTestIndexes(TestIndexParams params) throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
 		if(params == null) throw new UseMangoException("Test parameters are null, please check useMango build step in job");
 		return APIUtils.getTestIndex(params, ID_TOKEN);
@@ -511,7 +511,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		return APIUtils.getDefaultEnvironment(ID_TOKEN, projectId);
 	}
 
-	private static Response<EnvironmentItem> getEnvironments(String projectId) throws IOException, UseMangoException {
+	private static EnvironmentResponse getEnvironments(String projectId) throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
 		return APIUtils.getEnvironments(ID_TOKEN, projectId);
 	}
