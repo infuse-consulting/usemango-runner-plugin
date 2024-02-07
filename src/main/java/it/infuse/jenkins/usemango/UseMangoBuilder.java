@@ -287,7 +287,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
         @POST
         public FormValidation doCheckProjectId(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0) return FormValidation.error("Please set a Project ID");
+            if (value.length() == 0) return FormValidation.error("Please set a Project");
 
             List<String> projectTags = new ArrayList<>();
 			try {
@@ -341,7 +341,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
     			return FormValidation.error("Jenkins user '"+User.current()+"' does not have permissions to configure and build this Job - please contact your system administrator, or update the users' security settings.");
     		}
     		else if(StringUtils.isBlank(projectId)) {
-    			return FormValidation.error("Please complete mandatory Project ID field above");
+    			return FormValidation.error("Please complete mandatory Project field above");
     		}
 			else if (StringUtils.isBlank(environmentId)) {
 				return FormValidation.error("Environment is mandatory");
