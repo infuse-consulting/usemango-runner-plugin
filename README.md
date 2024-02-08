@@ -7,16 +7,28 @@ Main features:
 - Filter tests using account settings
 - Run tests in parallel across multiple nodes
 - Generate JUnit reports
- 
 ## Installation
- 
-1) Clone this repository from GitHub
 
-2) Build the plugin:
-```
-mvn clean package
-```
-3. Install the plugin:
+1. Clone this repository from GitHub
+
+2. Build the plugin:
+
+    ```
+    mvn clean package
+    ```
+3. Run plugin project in local Jenkins environment:
+   ```
+   mvn hpi:run
+   ```
+    Environment variables to be set (for development/testing)
+     - UM_CLIENT_ID
+     - UM_TEST_APP_URL
+     - UM_TEST_SERVICE_URL
+4. Generate distributable _.hpi_ file:
+    ```
+   mvn hpi:hpi
+   ```
+5. Install the plugin:
     - Copy to your `%JENKINS_HOME%\plugins` directory, **OR**
     - Login to Jenkins and upload your plugin (`Jenkins` -> `Manage Jenkins` -> `Manage Plugins` -> `Advanced`)
 
