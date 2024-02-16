@@ -9,13 +9,13 @@
     </parent>
     <groupId>it.infuse.jenkins</groupId>
     <artifactId>usemango-runner</artifactId>
-    <version>1.13-SNAPSHOT</version>
+    <version>1.13</version>
     <packaging>hpi</packaging>
     <name>useMango Runner</name>
     <description>This plugin integrates useMango with Jenkins.</description>
     <properties>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jenkins.version>2.60.3</jenkins.version>
+        <jenkins.version>2.164.3</jenkins.version>
         <java.level>8</java.level>
     </properties>
     <licenses>
@@ -149,7 +149,7 @@
     										maven-enforcer-plugin
     									</artifactId>
     									<versionRange>
-    										[3.0.0-M1,)
+    										[3.1.0-M1,)
     									</versionRange>
     									<goals>
     										<goal>display-info</goal>
