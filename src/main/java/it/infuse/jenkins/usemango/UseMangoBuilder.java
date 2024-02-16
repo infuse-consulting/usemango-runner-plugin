@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.DomainRequirement;
+import com.google.api.client.http.HttpResponseException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -58,10 +59,11 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 	private String testName;
 	private String testStatus;
 	private String assignedTo;
+	private String environmentId;
 
 	@DataBoundConstructor
 	public UseMangoBuilder(String useSlaveNodes, String nodeLabel, String projectId, String tags, String testName,
-			String testStatus, String assignedTo) {
+			String testStatus, String assignedTo, String environmentId) {
 		this.useSlaveNodes = useSlaveNodes;
 		this.nodeLabel = nodeLabel;
 		this.projectId = projectId;
@@ -69,6 +71,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		this.testName = testName;
 		this.testStatus = testStatus;
 		this.assignedTo = assignedTo;
+		this.environmentId = environmentId;
 	}
 	
 	@SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -110,27 +113,27 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 			params.setTestStatus(this.testStatus);
 			listener.getLogger().println("TestIndex API parameters:\n"+gson.toJson(params));
 
-			TestIndexResponse indexes = null;
-			indexes = getTestIndexes(params);
+			TestIndexResponse testIndexes = null;
+			testIndexes = getTestIndexes(params);
 
-			if(indexes != null && indexes.getItems() != null && indexes.getItems().size() > 0) {
+			if(testIndexes != null && testIndexes.getItems() != null && testIndexes.getItems().size() > 0) {
 
 				build.getWorkspace().child(ProjectUtils.LOG_DIR).mkdirs();
 				build.getWorkspace().child(ProjectUtils.RESULTS_DIR).mkdirs();
 
-				listener.getLogger().println(indexes.getItems().size() + " tests retrieved:\n"+gson.toJson(indexes.getItems()));
+				listener.getLogger().println(testIndexes.getItems().size() + " tests retrieved:\n"+gson.toJson(testIndexes.getItems()));
 
 				List<String> logList = new ArrayList<>();
 				List<ExecutableTest> executions = new ArrayList<>();
 				BiConsumer<TestIndexItem, Scenario> queueTest = (indexItem, scenario) -> {
 					ExecutableTest exeTest = new ExecutableTest(indexItem, scenario);
-					UseMangoTestTask testTask = new UseMangoTestTask(nodeLabel, build, listener, exeTest, projectId, credentials);
+					UseMangoTestTask testTask = new UseMangoTestTask(nodeLabel, build, listener, exeTest, projectId, environmentId, credentials);
 					executions.add(exeTest);
 					testTasks.add(testTask);
 					Jenkins.getInstance().getQueue().schedule2(testTask, Jenkins.getInstance().getQuietPeriod());
 					logList.add(ProjectUtils.getLogFileName(exeTest));
 				};
-				indexes.getItems().forEach((test) -> {
+				testIndexes.getItems().forEach((test) -> {
 					try {
 						if (test.getHasScenarios()){
 							List<Scenario> scenarios = getTestScenarios(this.projectId, test.getId());
@@ -207,7 +210,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
     			List<Project> projects = getProjects();
     			if(projects != null) {
     				projects.forEach(project->{
-    					items.add(project.getName());
+    					items.add(project.getName(), project.getId());
     				});
     			}
     		}
@@ -234,8 +237,29 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 			}
 			return items;
 		}
-        
-        public ListBoxModel doFillTestStatusItems() {
+         
+		public ListBoxModel doFillEnvironmentIdItems(@QueryParameter String projectId) {
+			ListBoxModel items = new ListBoxModel();
+			try {
+				EnvironmentResponse environments = getEnvironments(projectId);
+				if(environments != null && environments.getItems() != null && !environments.getItems().isEmpty()) {
+					List<EnvironmentItem> environmentItems = environments.getItems();
+					environmentItems.forEach(environmentItem -> {
+						String name = environmentItem.getName();
+						String id = environmentItem.getId();
+						boolean isDefault = environmentItem.isDefault();
+						ListBoxModel.Option option = new ListBoxModel.Option(name, id, isDefault);
+						items.add(option);
+					});
+                }
+			}
+			catch(IOException | UseMangoException e) {
+				e.printStackTrace(System.out);
+			}
+			return items;
+		}
+
+		public ListBoxModel doFillTestStatusItems() {
     		ListBoxModel items = new ListBoxModel();
     		items.add(""); // blank top option
     		items.add("Design");
@@ -247,9 +271,9 @@ public class UseMangoBuilder extends Builder implements BuildStep {
     	}
 
         @POST
-        public FormValidation doCheckNodeLabel(@QueryParameter String nodeLabel) 
+        public FormValidation doCheckNodeLabel(@QueryParameter String nodeLabel)
         		throws IOException, ServletException {
-        	
+
         	if(StringUtils.isNotBlank(nodeLabel)) {
         		Label label = Label.get(nodeLabel);
         		if(label != null && label.getNodes() != null && label.getNodes().size() > 0) {
@@ -263,7 +287,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
         @POST
         public FormValidation doCheckProjectId(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0) return FormValidation.error("Please set a Project ID");
+            if (value.length() == 0) return FormValidation.error("Please set a Project");
 
             List<String> projectTags = new ArrayList<>();
 			try {
@@ -290,19 +314,38 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 			}
         }
 
+        @POST
+        public FormValidation doCheckEnvironmentId(@QueryParameter String projectId)
+                throws IOException, UseMangoException {
+            try {
+        		if(!projectId.isEmpty()) {
+        			String defaultEnvironmentName = getDefaultEnvironment(projectId).getName();
+        			return FormValidation.okWithMarkup("Default Environment: " + defaultEnvironmentName);
+        		}
+        		return FormValidation.ok();
+        	}
+        	catch (HttpResponseException e) {
+        		return FormValidation.warning("Error fetching project's default environment:" + e.getMessage());
+        	}
+        }
+
     	public FormValidation doValidateSettings(
     			@QueryParameter("projectId") final String projectId,
     			@QueryParameter("tags") final String tags,
     			@QueryParameter("testName") final String testName,
-    	        @QueryParameter("testStatus") final String testStatus,
-    	        @QueryParameter("assignedTo") final String assignedTo) throws IOException, ServletException {
-    		
+    			@QueryParameter("testStatus") final String testStatus,
+    			@QueryParameter("assignedTo") final String assignedTo,
+    			@QueryParameter("environmentId") final String environmentId) throws IOException {
+
     		if(!ProjectUtils.hasCorrectPermissions(User.current())) {
     			return FormValidation.error("Jenkins user '"+User.current()+"' does not have permissions to configure and build this Job - please contact your system administrator, or update the users' security settings.");
     		}
     		else if(StringUtils.isBlank(projectId)) {
-    			return FormValidation.error("Please complete mandatory Project ID field above");
+    			return FormValidation.error("Please complete mandatory Project field above");
     		}
+			else if (StringUtils.isBlank(environmentId)) {
+				return FormValidation.error("Environment is mandatory");
+			}
     		else {
 	    		try {
 	    		    List<UmUser> users = getUsers();
@@ -463,6 +506,16 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		return APIUtils.getProjectTags(ID_TOKEN, projectId);
 	}
 
+	private static EnvironmentItem getDefaultEnvironment(String projectId) throws IOException, UseMangoException{
+		checkTokenExistsAndValid();
+		return APIUtils.getDefaultEnvironment(ID_TOKEN, projectId);
+	}
+
+	private static EnvironmentResponse getEnvironments(String projectId) throws IOException, UseMangoException {
+		checkTokenExistsAndValid();
+		return APIUtils.getEnvironments(ID_TOKEN, projectId);
+	}
+
 	private static List<UmUser> getUsers() throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
 		return APIUtils.getUsers(ID_TOKEN);
@@ -512,6 +565,13 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 	 */
 	public String getAssignedTo() {
 		return assignedTo;
+	}
+
+	/**
+	 * @return the environment
+	 */
+	public String getEnvironmentId() {
+		return environmentId;
 	}
 
 	/**

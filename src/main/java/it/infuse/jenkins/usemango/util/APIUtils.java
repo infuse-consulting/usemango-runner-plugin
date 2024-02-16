@@ -22,6 +22,8 @@ public class APIUtils {
     final static String ENDPOINT_PROJECT 	= ENDPOINT_PROJECTS + "/%s";
     final static String ENDPOINT_TESTINDEX = ENDPOINT_PROJECT + "/testindex";
     final static String ENDPOINT_USERS = "/users";
+    final static String ENDPOINT_ENVIRONMENTS = "/projects/%s/environments";
+    final static String ENDPOINT_DEFAULT_ENVIRONMENT = "/projects/%s/environments/default";
     final static String ENDPOINT_PROJECT_TAGS = ENDPOINT_PROJECT + "/testtags";
     final static String ENDPOINT_TEST_SCENARIOS = ENDPOINT_PROJECT + "/tests/%s/scenarios";
 
@@ -85,6 +87,18 @@ public class APIUtils {
 		return (ArrayList<Project>)response.parseAs(new TypeToken<ArrayList<Project>>(){}.getType());
 	}
 
+	public static EnvironmentItem getDefaultEnvironment(String idToken, String projectId) throws IOException {
+		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
+				(HttpRequest request) -> {request.setParser(new JsonObjectParser(JSON_FACTORY));
+				});
+		GenericUrl url = new GenericUrl(getTestServiceUrl());
+		url.setRawPath(API_VERSION + String.format(ENDPOINT_DEFAULT_ENVIRONMENT, projectId));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		request.setHeaders(getHeadersForServer(idToken));
+		HttpResponse response = request.execute();
+		return (EnvironmentItem)response.parseAs(new TypeToken<EnvironmentItem>(){}.getType());
+	}
+
 	@SuppressWarnings("unchecked")
 	public static List<String> getProjectTags(String idToken, String project) throws IOException {
 		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
@@ -95,6 +109,35 @@ public class APIUtils {
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		request.setHeaders(getHeadersForServer(idToken));
 		return (ArrayList<String>)request.execute().parseAs(new TypeToken<ArrayList<String>>(){}.getType());
+	}
+
+	@SuppressWarnings("unchecked")
+
+	public static EnvironmentResponse getEnvironments(String idToken, String project) throws IOException {
+		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
+				(HttpRequest request) -> {request.setParser(new JsonObjectParser(JSON_FACTORY));
+				});
+
+		EnvironmentResponse response = null;
+		while(true) { // handle pagination
+			GenericUrl url = new GenericUrl(getTestServiceUrl());
+
+			url.setRawPath(API_VERSION + String.format(ENDPOINT_ENVIRONMENTS, project));
+			if(isAnotherPage(response)) url.set("cursor", response.getInfo().getNext());
+			HttpRequest request = requestFactory.buildGetRequest(url);
+			request.setHeaders(getHeadersForServer(idToken));
+			if(isAnotherPage(response)) {
+				EnvironmentResponse tmpResponse = request.execute().parseAs(EnvironmentResponse.class);
+				response.getItems().addAll(tmpResponse.getItems());
+				response.getInfo().setHasNext(tmpResponse.getInfo().isHasNext());
+				response.getInfo().setNext(tmpResponse.getInfo().getNext());
+			}
+			else {
+				response = request.execute().parseAs(EnvironmentResponse.class);
+			}
+			if(!response.getInfo().isHasNext()) break;
+		}
+		return response;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -123,8 +166,8 @@ public class APIUtils {
 		return (ArrayList<Scenario>)response.parseAs(new TypeToken<ArrayList<Scenario>>(){}.getType());
 	}
 	
-	private static boolean isAnotherPage(TestIndexResponse response) {
-		return response != null && response.getInfo() != null && response.getInfo().isHasNext();
+	private static boolean isAnotherPage(PagedResponse pagedResponse) {
+		return pagedResponse != null && pagedResponse.getInfo() != null && pagedResponse.getInfo().isHasNext();
 	}
 
 	private static HttpHeaders getHeadersForServer(String idToken){
