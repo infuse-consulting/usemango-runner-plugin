@@ -64,7 +64,8 @@ public class UseMangoTestResultsAction implements RunAction2 {
                 for (ExecutableTest exeScenario: testScenarios) {
                     if (!exeScenario.isPassed()) { testPassed = false; }
                     Scenario scenario = exeScenario.getScenario();
-                    TestResult result = new TestResult(scenario.getName(), exeScenario.isPassed(), getReportLink(exeScenario.getRunId()), null);
+                    String scenarioName = (scenario != null && scenario.getName() != null) ? scenario.getName() : "default";
+                    TestResult result = new TestResult(scenarioName, exeScenario.isPassed(), getReportLink(exeScenario.getRunId()), null);
                     scenarioResults.add(result);
                 }
                 this.tests.add(new TestResult(testScenarios.get(0).getName(), testPassed, null, scenarioResults));

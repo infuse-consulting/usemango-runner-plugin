@@ -136,6 +136,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 				testIndexes.getItems().forEach((test) -> {
 					try {
 						if (test.getHasScenarios()){
+							queueTest.accept(test, null);
 							List<Scenario> scenarios = getTestScenarios(this.projectId, test.getId());
 							scenarios.forEach((scenario) -> {
 								queueTest.accept(test, scenario);
