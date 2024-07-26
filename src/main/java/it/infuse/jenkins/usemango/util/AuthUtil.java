@@ -28,9 +28,9 @@ public class AuthUtil {
         Log.fine("Authenticating user - " + username);
         InitiateAuthResult result = initiateAuthRequest(AuthFlowType.USER_PASSWORD_AUTH, authParams);
 
-        String idToken = result.getAuthenticationResult().getIdToken();
+        String accessToken = result.getAuthenticationResult().getAccessToken();
         String refreshToken = result.getAuthenticationResult().getRefreshToken();
-        return new String[] {idToken, refreshToken};
+        return new String[] {accessToken, refreshToken};
     }
 
     public static String refreshAuthTokens(String refreshToken) throws UseMangoException {
@@ -43,7 +43,7 @@ public class AuthUtil {
 
         Log.fine("Refreshing authentication tokens");
         InitiateAuthResult result = initiateAuthRequest(AuthFlowType.REFRESH_TOKEN_AUTH, authParams);
-        return result.getAuthenticationResult().getIdToken();
+        return result.getAuthenticationResult().getAccessToken();
     }
 
     private static InitiateAuthResult initiateAuthRequest(AuthFlowType flowType, Map<String, String> authParams) throws UseMangoException {

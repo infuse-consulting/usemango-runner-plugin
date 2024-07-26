@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 public class UseMangoBuilder extends Builder implements BuildStep {
 
 	private static StandardUsernamePasswordCredentials credentials;
-	private static String ID_TOKEN = null;
+	private static String ACCESS_TOKEN = null;
 	private static String REFRESH_TOKEN = null;
 
 	private String useSlaveNodes;
@@ -443,15 +443,15 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 		loadUseMangoCredentials();
 		if(credentials == null) throw new UseMangoException("Credentials are null, please check useMango global config");
 		String[] tokens = AuthUtil.getAuthTokens(credentials.getUsername(), credentials.getPassword().getPlainText());
-		ID_TOKEN = tokens[0];
+		ACCESS_TOKEN = tokens[0];
 		REFRESH_TOKEN = tokens[1];
 	}
 
-	private static void refreshIdToken() throws UseMangoException{
+	private static void refreshAccessToken() throws UseMangoException{
 		try{
-			ID_TOKEN = AuthUtil.refreshAuthTokens(REFRESH_TOKEN);
+			ACCESS_TOKEN = AuthUtil.refreshAuthTokens(REFRESH_TOKEN);
 		} catch (UseMangoException e){
-			ID_TOKEN = null;
+			ACCESS_TOKEN = null;
 			REFRESH_TOKEN = null;
 			// Only handling the expired refresh token exception here other exceptions thrown will be related to other issues
 			String msg = e.getMessage();
@@ -463,7 +463,7 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 	}
 
 	private static boolean isTokenExpired(){
-		String base64EncodedBody = ID_TOKEN.split("\\.")[1];
+		String base64EncodedBody = ACCESS_TOKEN.split("\\.")[1];
 		Base64 base64Url = new Base64(true);
 		String body = new String(base64Url.decode(base64EncodedBody), StandardCharsets.UTF_8);
 		JsonObject jsonBody = new JsonParser().parse(body).getAsJsonObject();
@@ -474,49 +474,49 @@ public class UseMangoBuilder extends Builder implements BuildStep {
 	}
 
 	private static void checkTokenExistsAndValid() throws UseMangoException {
-		if(ID_TOKEN == null || REFRESH_TOKEN == null){
+		if(ACCESS_TOKEN == null || REFRESH_TOKEN == null){
 			getTokens();
 		}
 		else if(isTokenExpired()){
-			refreshIdToken();
+			refreshAccessToken();
 		}
 	}
 
 	private static TestIndexResponse getTestIndexes(TestIndexParams params) throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
 		if(params == null) throw new UseMangoException("Test parameters are null, please check useMango build step in job");
-		return APIUtils.getTestIndex(params, ID_TOKEN);
+		return APIUtils.getTestIndex(params, ACCESS_TOKEN);
 	}
 
 	private static List<Scenario> getTestScenarios(String projectId, String testId) throws  IOException, UseMangoException {
 		checkTokenExistsAndValid();
-		return APIUtils.getScenarios(ID_TOKEN, projectId, testId);
+		return APIUtils.getScenarios(ACCESS_TOKEN, projectId, testId);
 	}
 
 	
 	private static List<Project> getProjects() throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
-		return APIUtils.getProjects(ID_TOKEN);
+		return APIUtils.getProjects(ACCESS_TOKEN);
 	}
 
 	private static List<String> getProjectTags(String projectId) throws IOException, UseMangoException{
 		checkTokenExistsAndValid();
-		return APIUtils.getProjectTags(ID_TOKEN, projectId);
+		return APIUtils.getProjectTags(ACCESS_TOKEN, projectId);
 	}
 
 	private static EnvironmentItem getDefaultEnvironment(String projectId) throws IOException, UseMangoException{
 		checkTokenExistsAndValid();
-		return APIUtils.getDefaultEnvironment(ID_TOKEN, projectId);
+		return APIUtils.getDefaultEnvironment(ACCESS_TOKEN, projectId);
 	}
 
 	private static EnvironmentResponse getEnvironments(String projectId) throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
-		return APIUtils.getEnvironments(ID_TOKEN, projectId);
+		return APIUtils.getEnvironments(ACCESS_TOKEN, projectId);
 	}
 
 	private static List<UmUser> getUsers() throws IOException, UseMangoException {
 		checkTokenExistsAndValid();
-		return APIUtils.getUsers(ID_TOKEN);
+		return APIUtils.getUsers(ACCESS_TOKEN);
 	}
 	
 	private static void prepareWorkspace(FilePath workspace) throws IOException, InterruptedException {
