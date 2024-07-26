@@ -5,7 +5,6 @@ import it.infuse.jenkins.usemango.exception.UseMangoException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import javax.jws.soap.SOAPBinding;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
